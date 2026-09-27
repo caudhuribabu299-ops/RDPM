@@ -1,0 +1,185 @@
+name: RDP
+
+on:
+
+workflow dispatch:
+
+jobs:
+
+secure-rdp:
+
+runs-on: windows-latest
+
+timeout-minutes: 3600
+
+steps:
+
+-name: Configure Core RDP Settings
+
+run:
+
+Enable Remote Desktop and disable Network Level Authentication (if needed)
+
+Set-ItemProperty-Path "HKLM:\System\CurrentControlSet\Control\Terminal Server
+
+-Name "fDenyTSConnections"-Value 0-Force
+
+Set-ItemProperty Path HKLM:\System\CurrentControlSet\Control\Terminal Server/WinStations RDP-Tep'
+
+-Name "UserAuthentication-Value 0-Force
+
+Set-ItemProperty-Path HKLM: System\CurrentControlSet\Control\Terminal
+
+Server/WinStations/RDP-Tep'
+
+-Name "Security Layer"-Value 0-Force
+
+Remove any existing rule with the same name to avoid duplication netsh advfirewall firewall delete rule name='RDP-Tailscale"
+
+#For testing, allow any incoming connection on port 3389
+
+netsh advfirewall firewall add rule name="RDP-Tailscale"
+
+dir=in action=allow protocol=TCP localport=3389
+
+(Optional) Restart the Remote Desktop service to ensure changes take effect
+
+Restart-Service -Name TermService-Force
+
+name: Create RDP User with Secure Password
+
+run:
+
+Add-Type-AssemblyName System.Security
+
+ScharSet = @
+
+}
+
+Upper char[]](65.90) A-Z.
+
+Lower char|||(97.122) #a-z
+
+Number[char[]](48..57) #0-9
+
+Special([char[]](33.47)+(char ||(58..64) +
+
+[char[]](91.96)+[char[]] (123..126)) # Special characters
+
+SrawPassword = ()
+
+Sraw Password + ScharSet. Upper | Get-Random-Count 4
+
+SrawPassword + ScharSet.Lower | Get-Random-Count 4
+
+SrawPassword + ScharSet.Special | Get-Random-Count 4
+
+55
+
+Sraw Password + ScharSet.Number | Get-Random-Count 4
+
+Spassword-join (SrawPassword | Sort-Object [Get-Random )
+
+SsecurePass ConvertTo-SecureString Spassword-AsPlainText-Force
+
+New-LocalUser-Name "RDP" -Password SsecurePass-Account NeverExpires Add-LocalGroupMember-Group "Administrators" -Member 'RDP"
+
+Add-LocalGroupMember-Group "Remote Desktop Users" -Member "RDP"
+
+echo "RDP_CREDS=User: RDP | Password: $password" >> Senv:GITHUB_ENV
+
+if (not (Get-LocalUser Name "RDP")) {
+
+Write-Error "User creation failed"
+
+exit 1
+
+- name: Install Tailscale
+
+run:
+
+Wait
+
+StsUrl="https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" SinstallerPath "Senv: TEMP\tailscale.msi"
+
+Invoke-WebRequest-Uri StsUrl-OutFile SinstallerPath
+
+Start-Process msiexec.exe-ArgumentList "/", """SinstallerPath"", "/quiet", "/norestart"
+
+Remove-Item SinstallerPath -ForceSpassword-join (SrawPassword | Sort-Object | Get-Random )
+
+SsecurePass = ConvertTo-SecureString Spassword-AsPlainText-Force New-LocalUser-Name RDP-Password SsecurePass-Account NeverExpires Add-LocalGroupMember-Group "Administrators" -Member "RDP" Add-Loca GroupMember Group "Remote Desktop Users -Member "RDP"
+
+echo "RDP CREDS-User: RDP | Password: Spassword" >> Seny:GITHUB_ENV
+
+if (not (Get-LocalUser-Name "RDP")) { Write-Error "User creation failed"
+
+exit 1
+
+name: Install Tailscale
+
+run: StsUrl="https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi SinstallerPath = "Seny: TEMP\tailscale.msi"
+
+-Wait
+
+Invoke-WebRequest -Uri StsUrl-OutFile SinstallerPath
+
+Start-Process msiexec.exe-ArgumentList "fi", ""SinstallerPath", "/quiet", "/norestart"
+
+Remove-Item SinstallerPath -Force
+
+-name: Establish Tailscale Connection
+
+run: Bring up Tailscale with the provided auth key and set a unique hostname & "Seny: ProgramFiles(Tailscale/tailscale.exe" up-authkey-$/1 secrets.TAILSCALE AUTH_KEY }}-hostname-gh-runner-Senv:GITHUB_RUN_ID
+
+Wait for Tailscale to assign an IP
+
+StsIP = Snull
+
+while (-not StsIP -and Sretries -lt 10)
+
+1
+
+Sretries = 0
+
+StsIP & "Senv: ProgramFiles/Tailscale\tailscale.exe" ip-4
+
+Start-Sleep Seconds 5
+
+Sretries++
+
+if (not StsIP)
+
+Write-Error "Tailscale IP not assigned. Exiting." exit 1
+
+echo "TAILSCALE_IP=StsIP" >> Senv:GITHUB_ENV
+
+- name: Verify RDP Accessibility
+
+run:
+
+Write-Host "Tailscale IP: Senv:TAILSCALE IP
+
+#Test connectivity using Test-NetConnection against the Tailscale IP on port 3389 StestResult = Test-NetConnection -ComputerName Senv: TAILLSCALE_IP-Port 3389 if (not StestResult.TopTestSucceeded) [
+
+Write-Error "TCP connection to RDP port 3389 failed" exit 1
+
+Write Host "TCP connectivity successful!"
+
+name: Maintain Connection
+
+Write-Hostn RDP ACCESS
+
+run: Write-Host "Address: Senv: TAILSCALE IP Write-Host "Username: RDP
+
+Write-Host "Password: Stecho Seny:RDP CREDS)" Write-Host
+
+Keep runner active indefinitely (or until manually cancelled)
+
+while ($true) {
+
+}
+
+Write-Host "[$/Get-Date)] RDP Active Use Ctrl+C in workflow to terminate
+
+Start-Sleep-Seconds 300}
